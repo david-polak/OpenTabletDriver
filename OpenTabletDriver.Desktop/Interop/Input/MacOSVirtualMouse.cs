@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using OpenTabletDriver.Native.MacOS;
 using OpenTabletDriver.Native.MacOS.Input;
 using OpenTabletDriver.Platform.Pointer;
@@ -24,6 +25,11 @@ namespace OpenTabletDriver.Desktop.Interop.Input
         public void MouseUp(MouseButton button)
         {
             SetButtonState(ref _currButtonStates, ToCGMouseButton(button), false);
+        }
+
+        public void Scroll(Vector2 delta)
+        {
+            throw new NotImplementedException();
         }
 
         public void Flush()

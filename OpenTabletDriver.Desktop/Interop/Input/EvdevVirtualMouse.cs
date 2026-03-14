@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using OpenTabletDriver.Attributes;
 using OpenTabletDriver.Native.Linux.Evdev;
 using OpenTabletDriver.Platform.Pointer;
@@ -24,6 +25,12 @@ namespace OpenTabletDriver.Desktop.Interop.Input
             {
                 Device.Write(EventType.EV_KEY, code, 0);
             }
+        }
+
+        public void Scroll(Vector2 delta)
+        {
+            Device.Write(EventType.EV_REL, EventCode.REL_HWHEEL, (int)delta.X);
+            Device.Write(EventType.EV_REL, EventCode.REL_WHEEL, (int)delta.Y);
         }
 
         protected virtual EventCode? GetCode(MouseButton button) => button switch
