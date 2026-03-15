@@ -1,7 +1,7 @@
 using System;
-using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using OpenTabletDriver.Plugin;
 using OpenTabletDriver.Plugin.Attributes;
 using OpenTabletDriver.Plugin.DependencyInjection;
@@ -71,10 +71,10 @@ namespace OpenTabletDriver.Desktop.Binding
          ToolTip("How often scrolling event gets sent (lower for better performance, higher for smoother scrolling).")]
         public float RefreshRate
         {
-            get => (float) _refresh_rate;
+            get => (float)_refresh_rate;
             set
             {
-                _refresh_rate = (int) Math.Round(value);
+                _refresh_rate = (int)Math.Round(value);
                 _interval = 1000f / _refresh_rate;
             }
         }
@@ -109,8 +109,8 @@ namespace OpenTabletDriver.Desktop.Binding
         public void SetPosition(Vector2 pos)
         {
             if (!timer.Enabled) return;
-            scroll_amount_horizontal = (int) Math.Ceiling((pos.X - initial_position.X) * (Sensitivity / 100));
-            scroll_amount_vertical = (int) Math.Ceiling((initial_position.Y - pos.Y) * (Sensitivity / 100));
+            scroll_amount_horizontal = (int)Math.Ceiling((pos.X - initial_position.X) * (Sensitivity / 100));
+            scroll_amount_vertical = (int)Math.Ceiling((initial_position.Y - pos.Y) * (Sensitivity / 100));
         }
 
         public void Scroll()
