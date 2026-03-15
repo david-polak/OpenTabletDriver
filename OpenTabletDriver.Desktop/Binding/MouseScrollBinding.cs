@@ -79,6 +79,12 @@ namespace OpenTabletDriver.Desktop.Binding
             }
         }
 
+        [BooleanPropertyAttribute("Invert horizontal", "Invert horizontal direction"), DefaultPropertyValue(false)]
+        public bool InvertHorizontal { get; set; }
+
+        [BooleanPropertyAttribute("Invert vertical", "Invert vertical direction"), DefaultPropertyValue(false)]
+        public bool InvertVertical { get; set; }
+
         public void Press(TabletReference tablet, IDeviceReport report)
         {
             if (this.timer == null)
@@ -103,17 +109,17 @@ namespace OpenTabletDriver.Desktop.Binding
         public void SetPosition(Vector2 pos)
         {
             if (!timer.Enabled) return;
-            scroll_amount_horizontal = (int) Math.Ceiling((initial_position.X - pos.X) * (Sensitivity / 100));
+            scroll_amount_horizontal = (int) Math.Ceiling((pos.X - initial_position.X) * (Sensitivity / 100));
             scroll_amount_vertical = (int) Math.Ceiling((initial_position.Y - pos.Y) * (Sensitivity / 100));
         }
 
         public void Scroll()
         {
             if (_direction == ScrollDirection.Horizontal || _direction == ScrollDirection.Both)
-                Pointer.ScrollHorizontally(scroll_amount_horizontal);
+                Pointer.ScrollHorizontally(InvertHorizontal ? -scroll_amount_horizontal : scroll_amount_horizontal);
 
             if (_direction == ScrollDirection.Vertical || _direction == ScrollDirection.Both)
-                Pointer.ScrollVertically(scroll_amount_vertical);
+                Pointer.ScrollVertically(InvertVertical ? -scroll_amount_vertical : scroll_amount_vertical);
 
             if (Pointer is ISynchronousPointer synchronousPointer)
                 synchronousPointer.Flush();
