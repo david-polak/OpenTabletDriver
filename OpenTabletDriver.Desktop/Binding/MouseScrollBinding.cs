@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 using OpenTabletDriver.Plugin;
@@ -11,13 +12,19 @@ using OpenTabletDriver.Plugin.Timers;
 namespace OpenTabletDriver.Desktop.Binding
 {
     [PluginName(PLUGIN_NAME)]
-    public class MouseScrollBinding : IStateBinding
+    public class MouseScrollBinding : IStatePositionBinding
     {
         private const string PLUGIN_NAME = "Mouse Scroll Binding";
 
-        private ITimer _timer;
         private ScrollDirection _direction;
-        private int _interval = 1;
+
+        private ITimer timer;
+        private float _interval = 1000f / 60;
+        private int _refresh_rate = 60;
+
+        private Vector2 initial_position;
+        private int scroll_amount_horizontal = 0;
+        private int scroll_amount_vertical = 0;
 
         [Resolved]
         public IMouseScrollHandler Pointer { set; get; }
@@ -25,23 +32,20 @@ namespace OpenTabletDriver.Desktop.Binding
         [Resolved]
         public ITimer Timer
         {
-            get => _timer;
+            get => timer;
             set
             {
-                if (_timer != null)
-                    _timer.Elapsed -= Scroll;
-
-                _timer = value;
-
-                if (_timer != null)
+                if (timer != null)
                 {
-                    _timer.Interval = _interval;
-                    _timer.Elapsed += Scroll;
+                    timer.Elapsed -= Scroll;
+                    if (timer.Enabled) timer.Stop();
                 }
+                timer = value;
+                timer.Elapsed += Scroll;
             }
         }
 
-        [Property("Direction"), DefaultPropertyValue("Vertical"), PropertyValidated(nameof(ValidDirections))]
+        [Property("Direction"), DefaultPropertyValue("Both"), PropertyValidated(nameof(ValidDirections))]
         public string Direction
         {
             get => _direction.ToString();
@@ -50,55 +54,66 @@ namespace OpenTabletDriver.Desktop.Binding
                 if (Enum.TryParse(value, out ScrollDirection direction))
                     _direction = direction;
                 else
-                    Log.Write("MouseScrollBinding", $"Invalid scroll direction '{value}', defaulting to 'Vertical'", LogLevel.Warning);
+                {
+                    Log.Write("MouseScrollBinding", $"Invalid scroll direction '{value}', defaulting to 'Both'", LogLevel.Warning);
+                    _direction = ScrollDirection.Both;
+                }
             }
         }
 
-        [Property("Amount"),
-         DefaultPropertyValue(120),
-         ToolTip("The amount to scroll. A negative value will scroll up or left " +
-                 "and a positive value will scroll down or right.\n\n" +
-                 "Note: A tick equals to 120 on Windows & Linux.")]
-        public int Amount { get; set; }
+        [Property("Sensitivity"),
+         DefaultPropertyValue(50f),
+         ToolTip("The sensitivity of scrolling with pen movement.")]
+        public float Sensitivity { get; set; }
 
-        [Property("Interval"),
-         DefaultPropertyValue(300),
-         Unit("ms"),
-         ToolTip("The interval at which to scroll.")]
-        public int Interval
+        [SliderProperty("Refresh rate", 1f, 320f, 60f),
+         DefaultPropertyValue(60f),
+         ToolTip("How often scrolling event gets sent (lower for better performance, higher for smoother scrolling).")]
+        public float RefreshRate
         {
-            get => _interval;
+            get => (float) _refresh_rate;
             set
             {
-                _interval = Math.Max(1, value);
-                if (_timer != null)
-                    _timer.Interval = _interval;
+                _refresh_rate = (int) Math.Round(value);
+                _interval = 1000f / _refresh_rate;
             }
         }
 
         public void Press(TabletReference tablet, IDeviceReport report)
         {
-            if (Timer == null)
-                Log.Write(nameof(MouseScrollBinding), $"{nameof(Timer)} not found, key repeat will not work", LogLevel.Warning);
+            if (this.timer == null)
+                throw new InvalidOperationException($"{nameof(this.Timer)} was not injected by daemon");
 
-            Scroll();
-            Timer?.Start();
+            if (report is IAbsolutePositionReport absolutePositionReport)
+            {
+                initial_position = absolutePositionReport.Position;
+                scroll_amount_horizontal = 0;
+                scroll_amount_vertical = 0;
+                timer.Interval = this._interval;
+                timer.Start();
+            }
+            else
+            {
+                throw new InvalidOperationException("MouseScrollBinding not supported on this device");
+            }
         }
 
-        public void Release(TabletReference tablet, IDeviceReport report) => Timer?.Stop();
+        public void Release(TabletReference tablet, IDeviceReport report) => timer?.Stop();
+
+        public void SetPosition(Vector2 pos)
+        {
+            if (!timer.Enabled) return;
+            scroll_amount_horizontal = (int) Math.Ceiling((initial_position.X - pos.X) * (Sensitivity / 100));
+            scroll_amount_vertical = (int) Math.Ceiling((initial_position.Y - pos.Y) * (Sensitivity / 100));
+        }
 
         public void Scroll()
         {
-            if (Amount == 0)
-                throw new InvalidOperationException($"{nameof(Amount)} must be greater than zero");
+            if (_direction == ScrollDirection.Horizontal || _direction == ScrollDirection.Both)
+                Pointer.ScrollHorizontally(scroll_amount_horizontal);
 
-            if (Pointer == null)
-                throw new InvalidOperationException($"{nameof(Pointer)} was not injected by daemon");
-
-            if (_direction == ScrollDirection.Vertical)
-                Pointer.ScrollVertically(-Amount);
-            else
-                Pointer.ScrollHorizontally(-Amount);
+            if (_direction == ScrollDirection.Vertical || _direction == ScrollDirection.Both)
+                Pointer.ScrollVertically(scroll_amount_vertical);
 
             if (Pointer is ISynchronousPointer synchronousPointer)
                 synchronousPointer.Flush();
@@ -108,6 +123,11 @@ namespace OpenTabletDriver.Desktop.Binding
         public static IEnumerable<string> ValidDirections =>
             validDirections ??= Enum.GetValues<ScrollDirection>().Select(Enum.GetName);
 
-        public override string ToString() => $"{PLUGIN_NAME}: Direction: {Direction}, Amount: {Amount}, Interval: {Interval}";
+        public override string ToString()
+        {
+            if (_direction != ScrollDirection.Both)
+                return $"{PLUGIN_NAME}";
+            return $"{PLUGIN_NAME} ({Direction})";
+        }
     }
 }
