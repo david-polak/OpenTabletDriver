@@ -106,7 +106,9 @@ namespace OpenTabletDriver.Desktop.Binding
 
         private static IEnumerable<string> validDirections;
         public static IEnumerable<string> ValidDirections =>
-            validDirections ??= Enum.GetValues<ScrollDirection>().Select(Enum.GetName);
+            validDirections ??= Enum.GetValues<ScrollDirection>()
+                .Where(direction => direction != ScrollDirection.Both)
+                .Select(Enum.GetName);
 
         public override string ToString() => $"{PLUGIN_NAME}: Direction: {Direction}, Amount: {Amount}, Interval: {Interval}";
     }
