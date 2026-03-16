@@ -30,7 +30,7 @@ namespace OpenTabletDriver.Desktop.Binding
                     stateBinding.Release(tablet, report);
             }
 
-            if (Binding is IStatePositionBinding statePositionBinding && report is IAbsolutePositionReport absolutePositionReport)
+            if (pressureThresholdIsMetOrUnneeded && Binding is IStatePositionBinding statePositionBinding && report is IAbsolutePositionReport absolutePositionReport)
             {
                 statePositionBinding.SetPosition(absolutePositionReport.Position);
             }

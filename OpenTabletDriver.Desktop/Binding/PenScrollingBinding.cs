@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using OpenTabletDriver.Plugin;
 using OpenTabletDriver.Plugin.Attributes;
@@ -49,14 +47,11 @@ namespace OpenTabletDriver.Desktop.Binding
             }
         }
 
-        [BooleanPropertyAttribute("Scroll horizontally", "When enabled moving the pen with this binding scrolls horizontally"), DefaultPropertyValue(true)]
+        [BooleanPropertyAttribute("Scroll horizontally", "pen movement scrolls horizontally"), DefaultPropertyValue(true)]
         public bool HorziontalScrollingEnabled { get; set; }
 
-        [BooleanPropertyAttribute("Scroll vertically", "When enabled moving the pen with this binding scrolls vertically"), DefaultPropertyValue(true)]
+        [BooleanPropertyAttribute("Scroll vertically", "pen movement scrolls vertically"), DefaultPropertyValue(true)]
         public bool VerticalScrollingEnabled { get; set; }
-
-        [BooleanPropertyAttribute("Drag scrolling", "Determines if scrolling needs to involve pen being dragged"), DefaultPropertyValue(false)]
-        public bool Drag { get; set; }
 
         [Property("Sensitivity"), ToolTip("The sensitivity of scrolling with pen movement."), DefaultPropertyValue(50f)]
         public float Sensitivity { get; set; }
@@ -64,10 +59,10 @@ namespace OpenTabletDriver.Desktop.Binding
         [SliderProperty("Refresh rate", 1f, 320f, 60f), ToolTip("How often scrolling event gets sent (lower for better performance, higher for smoother scrolling)."), DefaultPropertyValue(60f)]
         public float RefreshRate { get; set; }
 
-        [BooleanPropertyAttribute("Invert horizontal axis", "Inverts the horizontal scrolling direction"), DefaultPropertyValue(false)]
+        [BooleanPropertyAttribute("Invert horizontal axis", "invert horizontal scrolling"), DefaultPropertyValue(false)]
         public bool InvertHorizontalAxis { get; set; }
 
-        [BooleanPropertyAttribute("Invert vertical axis", "Inverts the vertical scrolling direction (MacOS like)"), DefaultPropertyValue(false)]
+        [BooleanPropertyAttribute("Invert vertical axis", "invert vertical scrolling (MacOS like)"), DefaultPropertyValue(false)]
         public bool InvertVerticalAxis { get; set; }
 
         public void Press(TabletReference tablet, IDeviceReport report)
@@ -77,7 +72,7 @@ namespace OpenTabletDriver.Desktop.Binding
                 throw new InvalidOperationException("PenScrollingBinding not supported on this device");
             }
 
-            ResetScrollingTimer()
+            ResetScrollingTimer();
 
             _initialPosition = ((IAbsolutePositionReport)report).Position;
             _scrollAmountHorizontal = 0;
@@ -95,7 +90,7 @@ namespace OpenTabletDriver.Desktop.Binding
             }
 
             if (_scrollingTimer.Enabled)
-                _scrollingTimer.Stop()
+                _scrollingTimer.Stop();
 
             _scrollingTimer.Interval = 1000f / RefreshRate;
         }
