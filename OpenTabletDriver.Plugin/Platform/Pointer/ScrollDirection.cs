@@ -4,6 +4,5 @@ namespace OpenTabletDriver.Plugin.Platform.Pointer
     {
         Vertical = 0,
         Horizontal = 1,
-        Both = 2
     }
 }
